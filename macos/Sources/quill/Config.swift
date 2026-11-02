@@ -6,7 +6,8 @@ import Foundation
 ///       "recordings_dir": "~/Recordings",
 ///       "transcription": { "enabled": true, "engine": "parakeet" },
 ///       "mic_voice_processing": true,
-///       "on_stop": "my-hook"
+///       "on_stop": "my-hook",
+///       "auto_record": ["zoom", "tuple"]
 ///     }
 ///
 /// Resolution order for the recordings root: --out flag > config file >
@@ -31,6 +32,22 @@ enum Config {
     static func onStop() -> String? {
         guard let cmd = load()?["on_stop"] as? String, !cmd.isEmpty else { return nil }
         return cmd
+    }
+
+    /// Calling apps whose calls start and stop a recording automatically.
+    /// Default none. Unknown names are reported rather than silently dropped.
+    static func autoRecordApps() -> Set<CallApp> {
+        let names = load()?["auto_record"] as? [String] ?? []
+        return Set(
+            names.compactMap { name in
+                guard let app = CallApp(rawValue: name.lowercased()) else {
+                    let known = CallApp.allCases.map(\.rawValue).joined(separator: ", ")
+                    FileHandle.standardError.write(
+                        Data("warning: unknown auto_record app \"\(name)\" (known: \(known))\n".utf8))
+                    return nil
+                }
+                return app
+            })
     }
 
     /// Whether finished recordings are transcribed automatically. Default on.

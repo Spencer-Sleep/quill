@@ -115,7 +115,8 @@ Optional, at `~/.config/quill/config.json`:
 {
   "recordings_dir": "~/Recordings",
   "transcription": { "enabled": true, "engine": "parakeet" },
-  "on_stop": "my-hook"
+  "on_stop": "my-hook",
+  "auto_record": ["zoom", "tuple"]
 }
 ```
 
@@ -132,6 +133,23 @@ Optional, at `~/.config/quill/config.json`:
   argument, **after the transcript is written** (or right after recording if
   transcription is disabled). Wire it to whatever comes next: summarization,
   filing, indexing.
+- `auto_record` — calling apps whose calls start and stop a recording on
+  their own (`zoom`, `tuple`; default none). See below.
+
+## Auto-recording calls
+
+With `auto_record` set, quill polls Core Audio every two seconds for which
+processes are running audio. A call starts once a Zoom or Tuple process has
+held the mic for three seconds; you get a notification and recording begins.
+It ends after thirty seconds with no audio in or out from that app, so muting
+or a quiet stretch never splits a recording (both apps keep playback running
+for the whole call).
+
+Only recordings quill started for a call are stopped automatically; a
+recording you started by hand is yours to stop. Stopping an auto-started
+recording mid-call sticks: quill won't start another until that call ends.
+Zoom's settings-page mic test can trigger a short recording if it runs for
+more than three seconds.
 
 ## CLI
 

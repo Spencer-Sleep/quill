@@ -85,6 +85,11 @@ final class AppController {
     private var session: RecordingSession?
     private var captureStatus = RecordingSession.CaptureStatus.allHealthy
     private var ticker: Timer?
+    private var callDetector: CallDetector?
+    /// The call that auto-started the live session, if any. Manual sessions
+    /// are never auto-stopped; a manual stop mid-call clears this, and the
+    /// tracker won't report a new start until that call ends.
+    private var recordingCall: CallApp?
 
     init(root: URL) {
         self.root = root
@@ -92,6 +97,16 @@ final class AppController {
         menuBar.onOpenFolder = { [weak self] in self?.openFolder() }
         menuBar.onQuit = { [weak self] in self?.shutdown() }
         menuBar.update(.idle)
+
+        let autoRecordApps = Config.autoRecordApps()
+        if !autoRecordApps.isEmpty {
+            let detector = CallDetector(apps: autoRecordApps)
+            detector.onEvent = { [weak self] event in self?.handleCall(event) }
+            detector.start()
+            callDetector = detector
+            let labels = autoRecordApps.map(\.label).sorted().joined(separator: ", ")
+            FileHandle.standardError.write(Data("auto-recording calls in \(labels)\n".utf8))
+        }
 
         Task { [transcription, root] in
             await transcription.setStatusHandler { status in
@@ -117,7 +132,22 @@ final class AppController {
         }
     }
 
-    private func startSession() {
+    private func handleCall(_ event: CallTracker.Event) {
+        switch event {
+        case .started(let app):
+            FileHandle.standardError.write(Data("\(app.label) call detected\n".utf8))
+            guard session == nil, startSession() else { return }
+            recordingCall = app
+            notifyUser(title: "quill — recording \(app.label) call", body: "Stops automatically when the call ends.")
+        case .ended(let app):
+            FileHandle.standardError.write(Data("\(app.label) call ended\n".utf8))
+            guard recordingCall == app else { return }
+            stopSession()
+        }
+    }
+
+    @discardableResult
+    private func startSession() -> Bool {
         do {
             let newSession = try RecordingSession(root: root)
             newSession.onStatus = { [weak self] status in
@@ -139,7 +169,7 @@ final class AppController {
         } catch {
             FileHandle.standardError.write(Data("recording start failed: \(error)\n".utf8))
             notifyUser(title: "quill — recording failed", body: "\(error)")
-            return
+            return false
         }
 
         refreshMenu()
@@ -150,6 +180,7 @@ final class AppController {
         }
         RunLoop.main.add(timer, forMode: .common)
         ticker = timer
+        return true
     }
 
     private func stopSession() {
@@ -161,6 +192,7 @@ final class AppController {
                 "○ stopped · \(elapsed) · \(result.status.rawValue) · \(session.dir.path)\n".utf8
             ))
         self.session = nil
+        recordingCall = nil
         captureStatus = .allHealthy
         ticker?.invalidate()
         ticker = nil
