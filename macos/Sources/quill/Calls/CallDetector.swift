@@ -39,8 +39,9 @@ struct AudioActivity: Equatable, Sendable {
 ///
 /// A call starts once an app holds the mic for `startDelay` — long enough to
 /// ignore Zoom's settings-page mic test blips. It ends after `endDelay` with
-/// no input or output at all, so muting or a quiet stretch never splits a
-/// recording: both apps keep their output unit running for the whole call.
+/// no input or output at all: both apps keep their output unit running for
+/// the whole call (muting only drops input) and stop it within seconds of
+/// leaving. Kept short so leaving and quickly rejoining reads as a new call.
 struct CallTracker {
     enum Event: Equatable {
         case started(CallApp)
@@ -48,7 +49,7 @@ struct CallTracker {
     }
 
     var startDelay: TimeInterval = 3
-    var endDelay: TimeInterval = 30
+    var endDelay: TimeInterval = 10
 
     private(set) var activeCall: CallApp?
     private var micSince: [CallApp: Date] = [:]

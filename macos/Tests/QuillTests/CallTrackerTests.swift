@@ -47,26 +47,35 @@ final class CallTrackerTests: XCTestCase {
         _ = observe([.tuple: inCall], after: 0)
         XCTAssertEqual(observe([.tuple: inCall], after: 3), .started(.tuple))
         XCTAssertNil(observe([:], after: 10))
-        XCTAssertNil(observe([.tuple: silent], after: 30))
-        XCTAssertEqual(observe([.tuple: silent], after: 40), .ended(.tuple))
+        XCTAssertNil(observe([.tuple: silent], after: 16))
+        XCTAssertEqual(observe([.tuple: silent], after: 20), .ended(.tuple))
         XCTAssertNil(tracker.activeCall)
+    }
+
+    func testQuickRejoinIsANewCall() {
+        _ = observe([.tuple: inCall], after: 0)
+        _ = observe([.tuple: inCall], after: 3)
+        XCTAssertNil(observe([.tuple: silent], after: 10))
+        XCTAssertEqual(observe([.tuple: silent], after: 20), .ended(.tuple))
+        XCTAssertNil(observe([.tuple: inCall], after: 24))
+        XCTAssertEqual(observe([.tuple: inCall], after: 27), .started(.tuple))
     }
 
     func testAudioResumingResetsTheEndTimer() {
         _ = observe([.zoom: inCall], after: 0)
         _ = observe([.zoom: inCall], after: 3)
         XCTAssertNil(observe([.zoom: silent], after: 10))
-        XCTAssertNil(observe([.zoom: muted], after: 35))
-        XCTAssertNil(observe([.zoom: silent], after: 45))
-        XCTAssertNil(observe([.zoom: silent], after: 70))
-        XCTAssertEqual(observe([.zoom: silent], after: 75), .ended(.zoom))
+        XCTAssertNil(observe([.zoom: muted], after: 18))
+        XCTAssertNil(observe([.zoom: silent], after: 20))
+        XCTAssertNil(observe([.zoom: silent], after: 28))
+        XCTAssertEqual(observe([.zoom: silent], after: 30), .ended(.zoom))
     }
 
     func testOtherAppActivityDoesNotKeepTheCallAlive() {
         _ = observe([.zoom: inCall], after: 0)
         _ = observe([.zoom: inCall], after: 3)
         XCTAssertNil(observe([.tuple: inCall], after: 10))
-        XCTAssertEqual(observe([.tuple: inCall], after: 40), .ended(.zoom))
+        XCTAssertEqual(observe([.tuple: inCall], after: 20), .ended(.zoom))
     }
 
     func testMatchesHelperProcessesByBundlePrefix() {

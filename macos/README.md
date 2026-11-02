@@ -140,10 +140,11 @@ Optional, at `~/.config/quill/config.json`:
 
 With `auto_record` set, quill polls Core Audio every two seconds for which
 processes are running audio. A call starts once a Zoom or Tuple process has
-held the mic for three seconds; you get a notification and recording begins.
-It ends after thirty seconds with no audio in or out from that app, so muting
-or a quiet stretch never splits a recording (both apps keep playback running
-for the whole call).
+held the mic for three seconds; you get a notification, recording begins, and
+the menu reads `● recording · Tuple call · 0:42`. It ends after ten seconds
+with no audio in or out from that app. Muting never ends a call (both apps
+keep playback running for the whole call), and leaving then quickly rejoining
+starts a new recording.
 
 Only recordings quill started for a call are stopped automatically; a
 recording you started by hand is yours to stop. Stopping an auto-started

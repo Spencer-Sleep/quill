@@ -222,7 +222,8 @@ final class AppController {
     /// Rebuild the menu presentation from capture status plus elapsed time.
     private func refreshMenu() {
         guard let session else { return }
-        let elapsed = Self.format(Date().timeIntervalSince(session.startedAt))
+        let duration = Self.format(Date().timeIntervalSince(session.startedAt))
+        let elapsed = recordingCall.map { "\($0.label) call · \(duration)" } ?? duration
         let display: MenuBarController.Display
         switch captureStatus.display {
         case .healthy:
